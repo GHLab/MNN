@@ -9,6 +9,8 @@
 #import "backend/metal/MNNMetalContext.h"
 #import "core/Macro.h"
 
+#include "mnn.metallib.h"
+
 #if MNN_METAL_ENABLED
 
 using namespace MNN;
@@ -42,12 +44,16 @@ using namespace MNN;
     dispatch_once(&onceToken, ^{
 #if TARGET_OS_IOS
         NSString *path = [NSBundle.mainBundle pathForResource:@"mnn" ofType:@"metallib"];
+		library = [self.device newLibraryWithFile:path error:NULL];
 #else
-        NSString *path = @"mnn.metallib";
+		dispatch_data_t data = dispatch_data_create((const void *)mnn_metallib, sizeof(mnn_metallib), NULL, ^{
+				});
+		library = [self.device newLibraryWithData:data error:nil];
 #endif
-        library = path ? [self.device newLibraryWithFile:path error:NULL] : [self.device newDefaultLibrary];
+        
         if (nil == library) {
             MNN_ERROR("Can't load mnn.metallib\n");
+			assert(false);
         }
     });
     return library;
